@@ -673,6 +673,7 @@ absl::Status InstanceBase::initializeOrThrow(Network::Address::InstanceConstShar
   }
 
   // Workers get created first so they register for thread local updates.
+  // 初始化每个工作线程Worker对象
   listener_manager_ = listener_manager_factory->createListenerManager(
       *this, nullptr, worker_factory_, bootstrap_.enable_dispatcher_stats(), quic_stat_names_);
 
@@ -760,6 +761,7 @@ absl::Status InstanceBase::initializeOrThrow(Network::Address::InstanceConstShar
                                     bootstrap_.dynamic_resources().lds_resources_locator()),
                                 xds::core::v3::ResourceLocator));
     }
+    // 加载启动文件里的LDS配置,调用父类ListenerManagerImpl创建对LDS配置的订阅
     listener_manager_->createLdsApi(bootstrap_.dynamic_resources().lds_config(),
                                     lds_resources_locator.get());
   }
@@ -894,6 +896,7 @@ RunHelper::RunHelper(Instance& instance, const Options& options, Event::Dispatch
                      OverloadManager& null_overload_manager, std::function<void()> post_init_cb)
     : init_watcher_("RunHelper", [&instance, post_init_cb]() {
         if (!instance.isShutdown()) {
+          // 将调用startWorkers
           post_init_cb();
         }
       }) {
@@ -967,6 +970,7 @@ RunHelper::RunHelper(Instance& instance, const Options& options, Event::Dispatch
 void InstanceBase::run() {
   // RunHelper exists primarily to facilitate testing of how we respond to early shutdown during
   // startup (see RunHelperTest in server_test.cc).
+  // 创建RunHelper对象来负责工作线程启动前的准备工作,并在准备工作完成后执行InstanceBase::startWorkers方法启动工作线程
   const auto run_helper =
       RunHelper(*this, options_, *dispatcher_, clusterManager(), access_log_manager_, init_manager_,
                 overloadManager(), nullOverloadManager(), [this] {

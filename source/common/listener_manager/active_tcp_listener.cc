@@ -25,6 +25,7 @@ ActiveTcpListener::ActiveTcpListener(Network::TcpConnectionHandler& parent,
           config),
       tcp_conn_handler_(parent), connection_balancer_(connection_balancer),
       listen_address_(listen_address) {
+  // 将当前监听器注册到连接均衡选择器中
   connection_balancer_.registerHandler(*this);
 }
 
@@ -122,7 +123,7 @@ void ActiveTcpListener::onAcceptWorker(Network::ConnectionSocketPtr&& socket,
       return;
     }
   }
-
+  // 创建ActiveTcpSocket对象封装并继续调用onSocketAccepted方法
   auto active_socket = std::make_unique<ActiveTcpSocket>(*this, std::move(socket),
                                                          hand_off_restored_destination_connections);
 

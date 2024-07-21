@@ -543,6 +543,7 @@ ClusterManagerImpl::initialize(const envoy::config::bootstrap::v3::Bootstrap& bo
 
   // Once the initial set of static bootstrap clusters are created (including the local cluster),
   // we can instantiate the thread local cluster manager.
+  // 针对每个线程创建ThreadLocalClusterManagerImpl,解决多个工作线程访问Cluster配置的锁问题
   tls_.set([this, local_cluster_params](Event::Dispatcher& dispatcher) {
     return std::make_shared<ThreadLocalClusterManagerImpl>(*this, dispatcher, local_cluster_params);
   });

@@ -81,6 +81,7 @@ void ConnectionHandlerImpl::addListener(absl::optional<uint64_t> overridden_list
         disable_listeners_, std::move(internal_listener),
         config.shouldBypassOverloadManager() ? null_overload_manager_ : overload_manager_);
   } else if (config.listenSocketFactories()[0]->socketType() == Network::Socket::Type::Stream) {
+    // 对于TCP,将创建ActiveTcpListener实例
     auto overload_state =
         config.shouldBypassOverloadManager()
             ? (null_overload_manager_

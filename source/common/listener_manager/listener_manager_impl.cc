@@ -366,7 +366,7 @@ ListenerManagerImpl::ListenerManagerImpl(Instance& server,
           return dumpListenerConfigs(name_matcher);
         });
   }
-
+  // 根据配置的工作线程数创建工作线程,并通过ProdWorkerFactory来创建新的工作线程对象,工作线程名称以worker_为前缀
   for (uint32_t i = 0; i < server.options().concurrency(); i++) {
     workers_.emplace_back(worker_factory.createWorker(
         i, server.overloadManager(), server.nullOverloadManager(), absl::StrCat("worker_", i)));
@@ -581,6 +581,7 @@ bool ListenerManagerImpl::addOrUpdateListenerInternal(
     stats_.listener_in_place_updated_.inc();
   } else {
     ENVOY_LOG(debug, "use full listener update path for listener name={} hash={}", name, hash);
+    // 创建新的监听器对象
     new_listener = std::make_unique<ListenerImpl>(config, version_info, *this, name, added_via_api,
                                                   workers_started_, hash);
   }
@@ -609,11 +610,15 @@ bool ListenerManagerImpl::addOrUpdateListenerInternal(
     // We have no warming or active listener so we need to make a new one. What we do depends on
     // whether workers have been started or not.
     setNewOrDrainingSocketFactory(name, *new_listener);
+    // 判断工作线程是否已经启动
     if (workers_started_) {
       new_listener->debugLog("add warming listener");
+      // 如果工作线程已经启动,则新添加的监听器处于warming状态,此时还需要获取路由的配置及Cluster的配置后才能为工作线程提供服务
       warming_listeners_.emplace_back(std::move(new_listener));
     } else {
       new_listener->debugLog("add active listener");
+      // 如果工作线程还未启动,则此时ClusterManager、ListenerManager将通过xDS虎丘监听器相关的RDS及CDS配置,
+      // 这样在监听器关联的工作线程启动后,这些监听器将被设置为active状态,表示可以立即提供服务
       active_listeners_.emplace_back(std::move(new_listener));
     }
 
@@ -953,6 +958,7 @@ void ListenerManagerImpl::startWorkers(OptRef<GuardDog> guard_dog, std::function
       removeListenerInternal(listener->name(), false);
       continue;
     }
+    // 遍历所有工作线程workers_,并依次执行addListenerToWorker方法将监听器与工作线程进行绑定
     for (const auto& worker : workers_) {
       addListenerToWorker(*worker, absl::nullopt, *listener,
                           [this, listeners_pending_init, callback]() {
@@ -963,6 +969,7 @@ void ListenerManagerImpl::startWorkers(OptRef<GuardDog> guard_dog, std::function
                           });
     }
   }
+  // 轮询工作线程列表workers_,并运行WorkerImpl::start方法启动每个线程
   for (const auto& worker : workers_) {
     ENVOY_LOG(debug, "starting worker {}", i);
     worker->start(guard_dog, worker_started_running);

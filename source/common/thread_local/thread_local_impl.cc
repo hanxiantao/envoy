@@ -152,11 +152,14 @@ void InstanceImpl::registerThread(Event::Dispatcher& dispatcher, bool main_threa
   ASSERT(!shutdown_);
 
   if (main_thread) {
+    // 主线程单独记录
     main_thread_dispatcher_ = &dispatcher;
     thread_local_data_.dispatcher_ = &dispatcher;
   } else {
     ASSERT(!containsReference(registered_threads_, dispatcher));
+    // 将新工作线程注册到列表中
     registered_threads_.push_back(dispatcher);
+    // 主线程轮询每个工作线程发送post任务
     dispatcher.post([&dispatcher] { thread_local_data_.dispatcher_ = &dispatcher; });
   }
 }

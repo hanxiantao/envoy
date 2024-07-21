@@ -28,6 +28,7 @@ Event::DispatcherPtr Impl::allocateDispatcher(const std::string& name) {
 Event::DispatcherPtr
 Impl::allocateDispatcher(const std::string& name,
                          const Event::ScaledRangeTimerManagerFactory& scaled_timer_factory) {
+  // 创建调度器DispatcherImpl
   return std::make_unique<Event::DispatcherImpl>(name, *this, time_system_, scaled_timer_factory,
                                                  watermark_factory_);
 }

@@ -66,7 +66,7 @@ void TcpListenerImpl::onSocketEvent(short flags) {
 
     sockaddr_storage remote_addr;
     socklen_t remote_addr_len = sizeof(remote_addr);
-
+    // 执行系统的accept方法来接收新连接Socket对象
     IoHandlePtr io_handle =
         socket_->ioHandle().accept(reinterpret_cast<sockaddr*>(&remote_addr), &remote_addr_len);
     if (io_handle == nullptr) {
@@ -104,7 +104,7 @@ void TcpListenerImpl::onSocketEvent(short flags) {
             : Address::addressFromSockAddrOrThrow(remote_addr, remote_addr_len,
                                                   local_address->ip()->version() ==
                                                       Address::IpVersion::v6);
-
+    // 执行ActiveTcpListener::onAccept回调方法进入连接接收阶段
     cb_.onAccept(std::make_unique<AcceptedSocketImpl>(std::move(io_handle), local_address,
                                                       remote_address, overload_state_,
                                                       track_global_cx_limit_in_overload_manager_));
@@ -136,6 +136,7 @@ TcpListenerImpl::TcpListenerImpl(Event::Dispatcher& dispatcher, Random::RandomGe
     // Use level triggered mode to avoid potential loss of the trigger due to
     // transient accept errors or early termination due to accepting
     // max_connections_to_accept_per_socket_event connections.
+    // 创建网络监听,并设置收到新连接的回调方法为onSocketEvent
     socket_->ioHandle().initializeFileEvent(
         dispatcher,
         [this](uint32_t events) {

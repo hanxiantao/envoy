@@ -49,6 +49,7 @@ WorkerImpl::WorkerImpl(ThreadLocal::Instance& tls, ListenerHooks& hooks,
     : tls_(tls), hooks_(hooks), dispatcher_(std::move(dispatcher)), handler_(std::move(handler)),
       api_(api), reset_streams_counter_(
                      api_.rootScope().counterFromStatName(stat_names.reset_high_memory_stream_)) {
+  // 在构造方法中注册工作线程对象
   tls_.registerThread(*dispatcher_, false);
   overload_manager.registerForAction(
       OverloadActionNames::get().StopAcceptingConnections, *dispatcher_,
@@ -64,6 +65,7 @@ WorkerImpl::WorkerImpl(ThreadLocal::Instance& tls, ListenerHooks& hooks,
 void WorkerImpl::addListener(absl::optional<uint64_t> overridden_listener,
                              Network::ListenerConfig& listener, AddListenerCompletion completion,
                              Runtime::Loader& runtime, Random::RandomGenerator& random) {
+  // 调用目标线程Dispatcher的post方法,将连接管理器ConnectionHandler与监听器进行绑定
   dispatcher_->post(
       [this, overridden_listener, &listener, &runtime, &random, completion]() -> void {
         handler_->addListener(overridden_listener, listener, runtime, random);
@@ -146,13 +148,16 @@ void WorkerImpl::threadRoutine(OptRef<GuardDog> guard_dog, const std::function<v
   ENVOY_LOG(debug, "worker entering dispatch loop");
   // The watch dog must be created after the dispatcher starts running and has post events flushed,
   // as this is when TLS stat scopes start working.
+  // 发送post异步任务到目标工作线程任务调度队列
   dispatcher_->post([this, &guard_dog, cb]() {
     cb();
     if (guard_dog.has_value()) {
+      // 创建工作线程自己的WatchDog
       watch_dog_ = guard_dog->createWatchDog(api_.threadFactory().currentThreadId(),
                                              dispatcher_->name(), *dispatcher_);
     }
   });
+  // 执行线程Dispatcher中的run方法来阻塞等待处理新事件
   dispatcher_->run(Event::Dispatcher::RunType::Block);
   ENVOY_LOG(debug, "worker exited dispatch loop");
   if (guard_dog.has_value()) {
