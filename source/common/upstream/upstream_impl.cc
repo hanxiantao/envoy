@@ -540,6 +540,7 @@ Host::CreateConnectionData HostImplBase::createConnection(
         source_address_selector->getUpstreamLocalAddress(address, options);
     ENVOY_LOG(debug, "Connecting to configured HTTP/1.1 proxy at {}",
               transport_socket_options->http11ProxyInfo()->proxy_address->asString());
+    // 创建网络连接,并将网络事件注册到当前工作线程的Dispatcher内
     connection = dispatcher.createClientConnection(
         transport_socket_options->http11ProxyInfo()->proxy_address, upstream_local_address.address_,
         socket_factory.createTransportSocket(transport_socket_options, host),

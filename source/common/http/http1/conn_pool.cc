@@ -101,9 +101,11 @@ allocateConnPool(Event::Dispatcher& dispatcher, Random::RandomGenerator& random_
       std::move(host), std::move(priority), dispatcher, options, transport_socket_options,
       random_generator, state,
       [](HttpConnPoolImplBase* pool) {
+        // 通过连接池内的回调方法创建上游连接对象
         return std::make_unique<ActiveClient>(*pool, absl::nullopt);
       },
       [](Upstream::Host::CreateConnectionData& data, HttpConnPoolImplBase* pool) {
+        // 创建客户端连接解码器
         CodecClientPtr codec{new CodecClientProd(
             CodecType::HTTP1, std::move(data.connection_), data.host_description_,
             pool->dispatcher(), pool->randomGenerator(), pool->transportSocketOptions())};

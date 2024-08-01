@@ -380,7 +380,7 @@ void ConnectionImpl::onRead(uint64_t read_buffer_size) {
     }
     read_end_stream_raised_ = true;
   }
-
+  // 在完成数据的读取且buffer不为空时,通过FilterManagerImpl::onRead调用onContinueReading方法同步处理接收到的数据
   filter_manager_.onRead();
 }
 
@@ -677,6 +677,7 @@ void ConnectionImpl::onReadReady() {
   // reading from the transport if the read buffer is above high watermark at the start of the
   // method.
   transport_wants_read_ = false;
+  // 一次最多读取16KB大小报文并放入Buffer中
   IoResult result = transport_socket_->doRead(*read_buffer_);
   uint64_t new_buffer_size = read_buffer_->length();
   updateReadBufferStats(result.bytes_processed_, new_buffer_size);
@@ -702,6 +703,7 @@ void ConnectionImpl::onReadReady() {
 
   read_end_stream_ |= result.end_stream_read_;
   if (result.bytes_processed_ != 0 || result.end_stream_read_ ||
+      // 当读取的数据不为0或读取完成时,进入onRead
       (latched_dispatch_buffered_data && read_buffer_->length() > 0)) {
     // Skip onRead if no bytes were processed unless we explicitly want to force onRead for
     // buffered data. For instance, skip onRead if the connection was closed without producing
@@ -712,6 +714,7 @@ void ConnectionImpl::onReadReady() {
   // The read callback may have already closed the connection.
   if (result.action_ == PostIoAction::Close || bothSidesHalfClosed()) {
     ENVOY_CONN_LOG(debug, "remote close", *this);
+    // 关闭socket
     closeSocket(ConnectionEvent::RemoteClose);
   }
 }

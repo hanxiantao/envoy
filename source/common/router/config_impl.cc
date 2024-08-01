@@ -1942,11 +1942,11 @@ RouteConstSharedPtr VirtualHostImpl::getRouteFromRoutes(
     const RouteCallback& cb, const Http::RequestHeaderMap& headers,
     const StreamInfo::StreamInfo& stream_info, uint64_t random_value,
     absl::Span<const RouteEntryImplBaseConstSharedPtr> routes) const {
+  // 根据HTTP请求头轮询配置文件routes列表来查找Cluster
   for (auto route = routes.begin(); route != routes.end(); ++route) {
     if (!headers.Path() && !(*route)->supportsPathlessHeaders()) {
       continue;
     }
-
     RouteConstSharedPtr route_entry = (*route)->matches(headers, stream_info, random_value);
     if (route_entry == nullptr) {
       continue;
@@ -2123,6 +2123,7 @@ const VirtualHostImpl* RouteMatcher::findVirtualHost(const Http::RequestHeaderMa
   }
 
   // If 'ignore_port_in_host_matching' is set, ignore the port number in the host header(if any).
+  // 从HTTP请求头中取出Host值
   absl::string_view host_header_value = headers.getHostValue();
   if (ignorePortInHostMatching()) {
     if (const absl::string_view::size_type port_start =
@@ -2134,6 +2135,7 @@ const VirtualHostImpl* RouteMatcher::findVirtualHost(const Http::RequestHeaderMa
   // TODO (@rshriram) Match Origin header in WebSocket
   // request with VHost, using wildcard match
   // Lower-case the value of the host header, as hostnames are case insensitive.
+  // 在配置文件virtual_hosts_列表中查找,如果匹配不到项目,则继续尝试使用findWildcardVirtualHost方法从通配符规则中查找路由
   const std::string host = absl::AsciiStrToLower(host_header_value);
   const auto iter = virtual_hosts_.find(host);
   if (iter != virtual_hosts_.end()) {
@@ -2162,6 +2164,7 @@ RouteConstSharedPtr RouteMatcher::route(const RouteCallback& cb,
                                         const Http::RequestHeaderMap& headers,
                                         const StreamInfo::StreamInfo& stream_info,
                                         uint64_t random_value) const {
+  // 根据HTTP请求头在配置中查找虚拟主机virtualHost                                 
   const VirtualHostImpl* virtual_host = findVirtualHost(headers);
   if (virtual_host) {
     return virtual_host->getRouteFromEntries(cb, headers, stream_info, random_value);
