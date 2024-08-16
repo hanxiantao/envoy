@@ -617,7 +617,7 @@ bool ListenerManagerImpl::addOrUpdateListenerInternal(
       warming_listeners_.emplace_back(std::move(new_listener));
     } else {
       new_listener->debugLog("add active listener");
-      // 如果工作线程还未启动,则此时ClusterManager、ListenerManager将通过xDS虎丘监听器相关的RDS及CDS配置,
+      // 如果工作线程还未启动,则此时ClusterManager、ListenerManager将通过xDS获取监听器相关的RDS及CDS配置,
       // 这样在监听器关联的工作线程启动后,这些监听器将被设置为active状态,表示可以立即提供服务
       active_listeners_.emplace_back(std::move(new_listener));
     }
