@@ -124,22 +124,26 @@ void DispatcherImpl::clearDeferredDeleteList() {
   // Swap the current deletion vector so that if we do deferred delete while we are deleting, we
   // use the other vector. We will get another callback to delete that vector.
   if (current_to_delete_ == &to_delete_1_) {
+    // 切换为 to_delete_2_
     current_to_delete_ = &to_delete_2_;
   } else {
     current_to_delete_ = &to_delete_1_;
   }
 
   touchWatchdog();
+  // 防止其他 clearDeferredDeleteList 同时执行
   deferred_deleting_ = true;
 
   // Calling clear() on the vector does not specify which order destructors run in. We want to
   // destroy in FIFO order so just do it manually. This required 2 passes over the vector which is
   // not optimal but can be cleaned up later if needed.
   for (size_t i = 0; i < num_to_delete; i++) {
+    // 删除执行各个对象的析构方法
     (*to_delete)[i].reset();
   }
 
   to_delete->clear();
+  // 允许新的 clearDeferredDeleteList 执行
   deferred_deleting_ = false;
 }
 
@@ -224,9 +228,11 @@ void DispatcherImpl::deferredDelete(DeferredDeletablePtr&& to_delete) {
   ASSERT(isThreadSafe());
   if (to_delete != nullptr) {
     to_delete->deleteIsPending();
+    // Dispatcher 延迟清理列表的尾部添加待删除对象
     current_to_delete_->emplace_back(std::move(to_delete));
     ENVOY_LOG(trace, "item added to deferred deletion list (size={})", current_to_delete_->size());
     if (current_to_delete_->size() == 1) {
+      // 在第一个对象加入时插入一个清理任务
       deferred_delete_cb_->scheduleCallbackCurrentIteration();
     }
   }

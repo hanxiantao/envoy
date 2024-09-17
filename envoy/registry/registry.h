@@ -592,7 +592,7 @@ private:
     *version.mutable_metadata() = MessageUtil::keyValueStruct(metadata);
     return version;
   }
-
+  // 过滤器工厂实例
   T instance_{};
 };
 

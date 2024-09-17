@@ -168,6 +168,7 @@ ProdListenerComponentFactory::createListenerFilterFactoryListImpl(
                 MessageUtil::convertToStringForLogs(
                     static_cast<const Protobuf::Message&>(proto_config.typed_config())));
       // For static configuration, now see if there is a factory that will accept the config.
+      // 获取过滤器工厂实例
       auto& factory =
           Config::Utility::getAndCheckFactory<Configuration::NamedListenerFilterConfigFactory>(
               proto_config);
@@ -366,7 +367,7 @@ ListenerManagerImpl::ListenerManagerImpl(Instance& server,
           return dumpListenerConfigs(name_matcher);
         });
   }
-  // 根据配置的工作线程数创建工作线程,并通过ProdWorkerFactory来创建新的工作线程对象,工作线程名称以worker_为前缀
+  // 根据配置的工作线程数创建工作线程，并通过 ProdWorkerFactory 来创建新的工作线程对象，工作线程名称以 worker_ 为前缀
   for (uint32_t i = 0; i < server.options().concurrency(); i++) {
     workers_.emplace_back(worker_factory.createWorker(
         i, server.overloadManager(), server.nullOverloadManager(), absl::StrCat("worker_", i)));
@@ -613,12 +614,12 @@ bool ListenerManagerImpl::addOrUpdateListenerInternal(
     // 判断工作线程是否已经启动
     if (workers_started_) {
       new_listener->debugLog("add warming listener");
-      // 如果工作线程已经启动,则新添加的监听器处于warming状态,此时还需要获取路由的配置及Cluster的配置后才能为工作线程提供服务
+      // 如果工作线程已经启动，则新添加的监听器处于 warming 状态，此时还需要获取路由的配置及 Cluster 的配置后才能为工作线程提供服务
       warming_listeners_.emplace_back(std::move(new_listener));
     } else {
       new_listener->debugLog("add active listener");
-      // 如果工作线程还未启动,则此时ClusterManager、ListenerManager将通过xDS获取监听器相关的RDS及CDS配置,
-      // 这样在监听器关联的工作线程启动后,这些监听器将被设置为active状态,表示可以立即提供服务
+      // 如果工作线程还未启动，则此时 ClusterManager、ListenerManager 将通过 xDS 获取监听器相关的 RDS 及 CDS 配置，
+      // 这样在监听器关联的工作线程启动后，这些监听器将被设置为 active 状态，表示可以立即提供服务
       active_listeners_.emplace_back(std::move(new_listener));
     }
 

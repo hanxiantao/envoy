@@ -32,9 +32,9 @@ LdsApiImpl::LdsApiImpl(const envoy::config::core::v3::ConfigSource& lds_config,
       init_target_("LDS", [this]() { subscription_->start({}); }) {
   const auto resource_name = getResourceName();
   if (lds_resources_locator == nullptr) {
-    // 注册LDS订阅subscription
-    // 当有LDS变更事件到来时,通过SubscriptionCallbacks回调方法进入Envoy,然后主线程调用LdsApiImpl::onConfigUpdate方法
-    // 执行ListenerManager的addOrUpdateListener或removeListener方法来添加或删除监听器
+    // 注册 LDS 订阅 subscription
+    // 当有 LDS 变更事件到来时，通过 SubscriptionCallbacks 回调方法进入 Envoy，然后主线程调用 LdsApiImpl::onConfigUpdate 方法
+    // 执行 ListenerManager 的 addOrUpdateListener 或 removeListener 方法来添加或删除监听器
     subscription_ = THROW_OR_RETURN_VALUE(cm.subscriptionFactory().subscriptionFromConfigSource(
                                               lds_config, Grpc::Common::typeUrl(resource_name),
                                               *scope_, *this, resource_decoder_, {}),

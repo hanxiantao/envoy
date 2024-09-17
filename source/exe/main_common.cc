@@ -40,6 +40,7 @@ StrippedMainBase::CreateInstanceFunction createFunction() {
          Filesystem::Instance& file_system, std::unique_ptr<ProcessContext> process_context,
          Buffer::WatermarkFactorySharedPtr watermark_factory) {
         auto local_address = Network::Utility::getLocalAddress(options.localAddressIpVersion());
+        // 创建 Server::InstanceImpl 并调用 initialize 方法进行初始化
         auto server = std::make_unique<Server::InstanceImpl>(
             init_manager, options, time_system, hooks, restarter, store, access_log_lock,
             std::move(random_generator), tls, thread_factory, file_system,
@@ -57,6 +58,7 @@ MainCommonBase::MainCommonBase(const Server::Options& options, Event::TimeSystem
                                std::unique_ptr<ProcessContext> process_context)
     : StrippedMainBase(options, time_system, listener_hooks, component_factory,
                        std::move(platform_impl), std::move(random_generator),
+                       // 这里传入 createFunction() 函数，在 StrippedMainBase 构造函数中会调用
                        std::move(process_context), createFunction())
 #ifdef ENVOY_ADMIN_FUNCTIONALITY
       ,

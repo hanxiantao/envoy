@@ -136,7 +136,7 @@ TcpListenerImpl::TcpListenerImpl(Event::Dispatcher& dispatcher, Random::RandomGe
     // Use level triggered mode to avoid potential loss of the trigger due to
     // transient accept errors or early termination due to accepting
     // max_connections_to_accept_per_socket_event connections.
-    // 创建网络监听,并设置收到新连接的回调方法为onSocketEvent
+    // 创建网络监听,并设置收到新连接的回调方法为 onSocketEvent
     socket_->ioHandle().initializeFileEvent(
         dispatcher,
         [this](uint32_t events) {

@@ -25,9 +25,9 @@ CdsApiImpl::CdsApiImpl(const envoy::config::core::v3::ConfigSource& cds_config,
       helper_(cm, "cds"), cm_(cm), scope_(scope.createScope("cluster_manager.cds.")) {
   const auto resource_name = getResourceName();
   if (cds_resources_locator == nullptr) {
-    // 注册对CDS资源的订阅subscription
-    // 每当有CDS配置事件发生变化时,都通过SubscriptionCallbacks注册的回调方法执行CdsApiImpl::onConfigUpdate方法,
-    // 然后执行ClusterManager中的addOrUpdateCluster或removeCluster反复噶添加或删除Cluster
+    // 注册对 CDS 资源的订阅 subscription
+    // 每当有 CDS 配置事件发生变化时，都通过 SubscriptionCallbacks 注册的回调方法执行 CdsApiImpl::onConfigUpdate 方法，
+    // 然后执行 ClusterManager 中的 addOrUpdateCluster 或 removeCluster 方法添加或删除 Cluster
     subscription_ = THROW_OR_RETURN_VALUE(cm_.subscriptionFactory().subscriptionFromConfigSource(
                                               cds_config, Grpc::Common::typeUrl(resource_name),
                                               *scope_, *this, resource_decoder_, {}),

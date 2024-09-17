@@ -159,7 +159,7 @@ void InstanceImpl::registerThread(Event::Dispatcher& dispatcher, bool main_threa
     ASSERT(!containsReference(registered_threads_, dispatcher));
     // 将新工作线程注册到列表中
     registered_threads_.push_back(dispatcher);
-    // 主线程轮询每个工作线程发送post任务
+    // 主线程轮询每个工作线程发送 post 任务
     dispatcher.post([&dispatcher] { thread_local_data_.dispatcher_ = &dispatcher; });
   }
 }

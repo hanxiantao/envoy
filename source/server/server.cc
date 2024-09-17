@@ -437,6 +437,7 @@ absl::Status InstanceBase::initializeOrThrow(Network::Address::InstanceConstShar
   thread_local_.registerThread(*dispatcher_, true);
 
   // Handle configuration that needs to take place prior to the main configuration load.
+  // 调用 InstanceUtil::loadBootstrapConfig 初始化启动参数 bootstrap
   RETURN_IF_NOT_OK(InstanceUtil::loadBootstrapConfig(
       bootstrap_, options_, messageValidationContext().staticValidationVisitor(), *api_));
   bootstrap_config_update_time_ = time_source_.systemTime();
@@ -567,6 +568,7 @@ absl::Status InstanceBase::initializeOrThrow(Network::Address::InstanceConstShar
     *bootstrap_.mutable_node()->mutable_user_agent_build_version() = VersionInfo::buildVersion();
   }
 
+  // 遍历 FactoryCategoryRegistry::registeredFactories 中的所有过滤器，并将相关信息添加到 bootstrap_ 对象的 node 中的 extensions 列表
   for (const auto& ext : Envoy::Registry::FactoryCategoryRegistry::registeredFactories()) {
     auto registered_types = ext.second->registeredTypes();
     for (const auto& name : ext.second->allRegisteredNames()) {
@@ -673,7 +675,7 @@ absl::Status InstanceBase::initializeOrThrow(Network::Address::InstanceConstShar
   }
 
   // Workers get created first so they register for thread local updates.
-  // 初始化每个工作线程Worker对象
+  // 创建 ListenerManager 并初始化 Worker
   listener_manager_ = listener_manager_factory->createListenerManager(
       *this, nullptr, worker_factory_, bootstrap_.enable_dispatcher_stats(), quic_stat_names_);
 
@@ -748,6 +750,7 @@ absl::Status InstanceBase::initializeOrThrow(Network::Address::InstanceConstShar
   // thread local data per above. See MainImpl::initialize() for why ConfigImpl
   // is constructed as part of the InstanceBase and then populated once
   // cluster_manager_factory_ is available.
+  // 创建 ClusterManager 并初始化 CDS
   RETURN_IF_NOT_OK(config_.initialize(bootstrap_, *this, *cluster_manager_factory_));
 
   // Instruct the listener manager to create the LDS provider if needed. This must be done later
@@ -761,7 +764,7 @@ absl::Status InstanceBase::initializeOrThrow(Network::Address::InstanceConstShar
                                     bootstrap_.dynamic_resources().lds_resources_locator()),
                                 xds::core::v3::ResourceLocator));
     }
-    // 加载启动文件里的LDS配置,调用父类ListenerManagerImpl创建对LDS配置的订阅
+    // 加载启动文件里的 LDS 配置，调用父类 ListenerManagerImpl 创建对 LDS 配置的订阅
     listener_manager_->createLdsApi(bootstrap_.dynamic_resources().lds_config(),
                                     lds_resources_locator.get());
   }

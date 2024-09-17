@@ -353,7 +353,7 @@ void ConnectionManagerImpl::doDeferredStreamDestroy(ActiveStream& stream) {
   }
 
   stream.filter_manager_.destroyFilters();
-
+  // 对 ActiveStream 对象进行延迟析构
   dispatcher_->deferredDelete(stream.removeFromList(streams_));
 
   // The response_encoder should never be dangling (unless we're destroying a
