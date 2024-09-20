@@ -962,6 +962,8 @@ RunHelper::RunHelper(Instance& instance, const Options& options, Event::Dispatch
     }
 
     ENVOY_LOG(info, "all clusters initialized. initializing init manager");
+    // 调用 init_manager.initialize 方法，将 RunHelper 添加为观测者 init_watcher_，
+    // 并在观测者回调方法中启动工作线程
     init_manager.initialize(init_watcher_);
 
     // Now that we're execute all the init callbacks we can resume RDS
