@@ -56,6 +56,7 @@ ActiveTcpListener::~ActiveTcpListener() {
     ASSERT(active_connections != nullptr);
     auto& connections = active_connections->connections_;
     while (!connections.empty()) {
+      // 理解关闭连接
       connections.front()->connection_->close(
           Network::ConnectionCloseType::NoFlush,
           "purging_socket_that_have_not_progressed_to_connections");
@@ -118,12 +119,14 @@ void ActiveTcpListener::onAcceptWorker(Network::ConnectionSocketPtr&& socket,
   if (!rebalanced) {
     Network::BalancedConnectionHandler& target_handler =
         connection_balancer_.pickTargetHandler(*this);
+    // 如果连接均衡决策结果为应由其他工作线程内的连接处理器 ConnectionHandler 处理当前连接，
+    // 则执行 post 方法将当前线程接收到的连接转移给新线程处理
     if (&target_handler != this) {
       target_handler.post(std::move(socket));
       return;
     }
   }
-  // 创建ActiveTcpSocket对象封装并继续调用onSocketAccepted方法
+  // 创建 ActiveTcpSocket 对象封装并继续调用 onSocketAccepted 方法
   auto active_socket = std::make_unique<ActiveTcpSocket>(*this, std::move(socket),
                                                          hand_off_restored_destination_connections);
 

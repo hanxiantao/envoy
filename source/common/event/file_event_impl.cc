@@ -81,7 +81,7 @@ void FileEventImpl::assignEvents(uint32_t events, event_base* base) {
         ASSERT(events != 0);
         event->mergeInjectedEventsAndRunCb(events);
       },
-      this);
+      this); // 传入自己的对象指针
 }
 
 void FileEventImpl::updateEvents(uint32_t events) {

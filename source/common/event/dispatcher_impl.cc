@@ -181,8 +181,8 @@ FileEventPtr DispatcherImpl::createFileEvent(os_fd_t fd, FileReadyCb cb, FileTri
   return FileEventPtr{new FileEventImpl(
       *this, fd,
       [this, cb](uint32_t events) {
-        touchWatchdog();
-        return cb(events);
+        touchWatchdog(); // 设置当前线程 Watchdog 为正常状态
+        return cb(events); // 调用回调方法，对于网络监听场景，cb 为 onSocketEvent 方法
       },
       trigger, events)};
 }

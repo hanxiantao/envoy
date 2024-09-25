@@ -899,7 +899,7 @@ RunHelper::RunHelper(Instance& instance, const Options& options, Event::Dispatch
                      OverloadManager& null_overload_manager, std::function<void()> post_init_cb)
     : init_watcher_("RunHelper", [&instance, post_init_cb]() {
         if (!instance.isShutdown()) {
-          // 将调用startWorkers
+          // 将调用 startWorkers
           post_init_cb();
         }
       }) {
@@ -975,7 +975,7 @@ RunHelper::RunHelper(Instance& instance, const Options& options, Event::Dispatch
 void InstanceBase::run() {
   // RunHelper exists primarily to facilitate testing of how we respond to early shutdown during
   // startup (see RunHelperTest in server_test.cc).
-  // 创建RunHelper对象来负责工作线程启动前的准备工作,并在准备工作完成后执行InstanceBase::startWorkers方法启动工作线程
+  // 创建 RunHelper 对象来负责工作线程启动前的准备工作，并在准备工作完成后执行 InstanceBase::startWorkers 方法启动工作线程
   const auto run_helper =
       RunHelper(*this, options_, *dispatcher_, clusterManager(), access_log_manager_, init_manager_,
                 overloadManager(), nullOverloadManager(), [this] {

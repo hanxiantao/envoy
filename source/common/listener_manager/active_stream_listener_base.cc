@@ -40,6 +40,7 @@ void ActiveStreamListenerBase::newConnection(Network::ConnectionSocketPtr&& sock
   // Find matching filter chain.
   const auto filter_chain = config_->filterChainManager().findFilterChain(*socket, *stream_info);
   if (filter_chain == nullptr) {
+    // 若未配置 L4 过滤器，则返回
     RELEASE_ASSERT(socket->connectionInfoProvider().remoteAddress() != nullptr, "");
     ENVOY_LOG(debug, "closing connection from {}: no matching filter chain found",
               socket->connectionInfoProvider().remoteAddress()->asString());
@@ -56,6 +57,7 @@ void ActiveStreamListenerBase::newConnection(Network::ConnectionSocketPtr&& sock
       std::make_shared<FilterChainInfoImpl>(filter_chain->name()));
 
   auto transport_socket = filter_chain->transportSocketFactory().createDownstreamTransportSocket();
+  // 1)建立跟下游的连接
   auto server_conn_ptr = dispatcher().createServerConnection(
       std::move(socket), std::move(transport_socket), *stream_info);
   if (const auto timeout = filter_chain->transportSocketConnectTimeout();
@@ -65,6 +67,7 @@ void ActiveStreamListenerBase::newConnection(Network::ConnectionSocketPtr&& sock
   }
   server_conn_ptr->setBufferLimits(config_->perConnectionBufferLimitBytes());
   RELEASE_ASSERT(server_conn_ptr->connectionInfoProvider().remoteAddress() != nullptr, "");
+  // 2)创建 L4 网络过滤器
   const bool empty_filter_chain = !config_->filterChainFactory().createNetworkFilterChain(
       *server_conn_ptr, filter_chain->networkFilterFactories());
   if (empty_filter_chain) {
@@ -72,6 +75,7 @@ void ActiveStreamListenerBase::newConnection(Network::ConnectionSocketPtr&& sock
                    server_conn_ptr->connectionInfoProvider().remoteAddress()->asString());
     server_conn_ptr->close(Network::ConnectionCloseType::NoFlush, "no_filters");
   }
+  // 3)将连接跟监听器关联起来，如果监听器配置发生变化，现有的连接的过滤器同步更新并重建过滤器
   newActiveConnection(*filter_chain, std::move(server_conn_ptr), std::move(stream_info));
 }
 

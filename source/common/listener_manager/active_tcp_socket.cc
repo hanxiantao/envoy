@@ -117,8 +117,9 @@ void ActiveTcpSocket::continueFilterChain(bool success) {
     } else {
       iter_ = std::next(iter_);
     }
-
+    // 遍历当前 Socket 上注册的 Listener FilterChain 列表
     for (; iter_ != accept_filters_.end(); iter_++) {
+      // 调用 Listener FilterChain 的 onAccept 回调方法
       Network::FilterStatus status = (*iter_)->onAccept(*this);
       if (status == Network::FilterStatus::StopIteration) {
         // The filter is responsible for calling us again at a later time to continue the filter
@@ -157,6 +158,7 @@ void ActiveTcpSocket::continueFilterChain(bool success) {
     }
     // Successfully ran all the accept filters.
     if (no_error) {
+      // 调用 newConnection 方法创建新连接对象
       newConnection();
     } else {
       // Signal the caller that no extra filter chain iteration is needed.
@@ -184,11 +186,13 @@ void ActiveTcpSocket::newConnection() {
   connected_ = true;
 
   // Check if the socket may need to be redirected to another listener.
+  // 检查是否需要将套接字重定向到另一个监听器
   Network::BalancedConnectionHandlerOptRef new_listener;
 
   if (hand_off_restored_destination_connections_ &&
       socket_->connectionInfoProvider().localAddressRestored()) {
     // Find a listener associated with the original destination address.
+    // 根据原始 Cluster 地址查找服务监听器
     new_listener =
         listener_.getBalancedHandlerByAddress(*socket_->connectionInfoProvider().localAddress());
   }
@@ -207,6 +211,7 @@ void ActiveTcpSocket::newConnection() {
     // Note also that we must account for the number of connections properly across both listeners.
     // TODO(mattklein123): See note in ~ActiveTcpSocket() related to making this accounting better.
     listener_.decNumConnections();
+    // 将由 iptables 重定向的连接交给与原始目的地地址关联的监听器处理
     new_listener.value().get().onAcceptWorker(std::move(socket_), false, false);
   } else {
     // Set default transport protocol if none of the listener filters did it.
@@ -215,6 +220,7 @@ void ActiveTcpSocket::newConnection() {
     }
     accept_filters_.clear();
     // Create a new connection on this listener.
+    // 在当前监听器上创建一个新的连接
     listener_.newConnection(std::move(socket_), std::move(stream_info_));
   }
 }

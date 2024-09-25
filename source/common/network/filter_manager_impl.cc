@@ -49,6 +49,7 @@ bool FilterManagerImpl::initializeReadFilters() {
   for (auto& entry : upstream_filters_) {
     if (entry->filter_ && !entry->initialized_) {
       entry->initialized_ = true;
+      // 调用 L4 过滤器的 onNewConnection 回调方法
       FilterStatus status = entry->filter_->onNewConnection();
       if (status == FilterStatus::StopIteration || connection_.state() != Connection::State::Open) {
         break;
@@ -66,7 +67,7 @@ void FilterManagerImpl::onContinueReading(ActiveReadFilter* filter,
   if (connection_.state() != Connection::State::Open) {
     return;
   }
-  // 判断是否已指定当前起始L4过滤器的位置,当过滤器起始位置为空时,会遍历所有过滤器upstream_filters_
+  // 判断是否已指定当前起始 L4 过滤器的位置，当过滤器起始位置为空时，会遍历所有过滤器 upstream_filters_
   std::list<ActiveReadFilterPtr>::iterator entry;
   if (!filter) {
     connection_.streamInfo().addBytesReceived(buffer_source.getReadBuffer().buffer.length());
@@ -81,7 +82,7 @@ void FilterManagerImpl::onContinueReading(ActiveReadFilter* filter,
     }
     if (!(*entry)->initialized_) {
       (*entry)->initialized_ = true;
-      // 当onNewConnection方法的返回状态不为StopIteration时,将继续执行过滤器的onData方法来处理请求数据
+      // 当 onNewConnection 方法的返回状态不为 StopIteration 时，将继续执行过滤器的 onData 方法来处理请求数据
       FilterStatus status = (*entry)->filter_->onNewConnection();
       if (status == FilterStatus::StopIteration || connection_.state() != Connection::State::Open) {
         return;

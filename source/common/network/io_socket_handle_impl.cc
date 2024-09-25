@@ -540,7 +540,7 @@ void IoSocketHandleImpl::initializeFileEvent(Event::Dispatcher& dispatcher, Even
                                              Event::FileTriggerType trigger, uint32_t events) {
   ASSERT(file_event_ == nullptr, "Attempting to initialize two `file_event_` for the same "
                                  "file descriptor. This is not allowed.");
-  // 通过 Dispatcher 向 libevent 库传递监听 fd_ 及网络事件的回调方法 onSocketEvent
+  // 调用 dispatcher.createFileEvent 方法向下层 libevent 库注册 socket 描述符 fd
   file_event_ = dispatcher.createFileEvent(fd_, cb, trigger, events);
 }
 

@@ -85,6 +85,8 @@ public:
 
   void onSocketAccepted(std::unique_ptr<ActiveTcpSocket> active_socket) {
     // Create and run the filters
+    // 对于新连接调用 createListenerFilterChain 方法，该方法根据监听器的配置 config_创建监听过滤器 filterChain，
+    // 并调用 startFilterChain 方法执行监听器过滤器 filterChain内的各个回调方法，处理连接建立过程
     if (config_->filterChainFactory().createListenerFilterChain(*active_socket)) {
       active_socket->startFilterChain();
     } else {

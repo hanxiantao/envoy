@@ -756,6 +756,7 @@ void ListenerManagerImpl::addListenerToWorker(Worker& worker,
   if (overridden_listener.has_value()) {
     ENVOY_LOG(debug, "replacing existing listener {}", overridden_listener.value());
   }
+  // 调用 WorkerImpl::addListener 方法，给目标线程添加监听器
   worker.addListener(
       overridden_listener, listener,
       [this, completion_callback]() -> void {
@@ -950,6 +951,7 @@ void ListenerManagerImpl::startWorkers(OptRef<GuardDog> guard_dog, std::function
       std::make_shared<std::atomic<uint64_t>>(workers_.size() * active_listeners_.size());
   ASSERT(warming_listeners_.empty());
   // We need to protect against inline deletion so have to use iterators directly.
+  // 遍历所有可被立即使用的监听器 active_listeners_
   for (auto listener_it = active_listeners_.begin(); listener_it != active_listeners_.end();) {
     auto& listener = *listener_it;
     listener_it++;
@@ -959,7 +961,7 @@ void ListenerManagerImpl::startWorkers(OptRef<GuardDog> guard_dog, std::function
       removeListenerInternal(listener->name(), false);
       continue;
     }
-    // 遍历所有工作线程workers_,并依次执行addListenerToWorker方法将监听器与工作线程进行绑定
+    // 遍历所有工作线程 workers_，并依次执行 addListenerToWorker 方法将监听器与工作线程进行绑定
     for (const auto& worker : workers_) {
       addListenerToWorker(*worker, absl::nullopt, *listener,
                           [this, listeners_pending_init, callback]() {
@@ -970,7 +972,7 @@ void ListenerManagerImpl::startWorkers(OptRef<GuardDog> guard_dog, std::function
                           });
     }
   }
-  // 轮询工作线程列表workers_,并运行WorkerImpl::start方法启动每个线程
+  // 轮询工作线程列表 workers_，并运行 WorkerImpl::start 方法启动每个线程
   for (const auto& worker : workers_) {
     ENVOY_LOG(debug, "starting worker {}", i);
     worker->start(guard_dog, worker_started_running);

@@ -65,7 +65,7 @@ WorkerImpl::WorkerImpl(ThreadLocal::Instance& tls, ListenerHooks& hooks,
 void WorkerImpl::addListener(absl::optional<uint64_t> overridden_listener,
                              Network::ListenerConfig& listener, AddListenerCompletion completion,
                              Runtime::Loader& runtime, Random::RandomGenerator& random) {
-  // 调用目标线程Dispatcher的post方法,将连接管理器ConnectionHandler与监听器进行绑定
+  // 调用目标线程 Dispatcher 的 post 方法，将连接管理器 ConnectionHandler 与监听器进行绑定
   dispatcher_->post(
       [this, overridden_listener, &listener, &runtime, &random, completion]() -> void {
         handler_->addListener(overridden_listener, listener, runtime, random);
@@ -117,6 +117,7 @@ void WorkerImpl::start(OptRef<GuardDog> guard_dog, const std::function<void()>& 
   // TODO(jmarantz): consider refactoring how this naming works so this naming
   // architecture is centralized, resulting in clearer names.
   Thread::Options options{absl::StrCat("wrk:", dispatcher_->name())};
+  // 调用系统方法 createThread 创建系统线程，并将 threadRoutine 方法作为工作线程的入口方法
   thread_ = api_.threadFactory().createThread(
       [this, guard_dog, cb]() -> void { threadRoutine(guard_dog, cb); }, options);
 }
@@ -148,16 +149,16 @@ void WorkerImpl::threadRoutine(OptRef<GuardDog> guard_dog, const std::function<v
   ENVOY_LOG(debug, "worker entering dispatch loop");
   // The watch dog must be created after the dispatcher starts running and has post events flushed,
   // as this is when TLS stat scopes start working.
-  // 发送post异步任务到目标工作线程任务调度队列
+  // 发送 post 异步任务到目标工作线程任务调度队列
   dispatcher_->post([this, &guard_dog, cb]() {
     cb();
     if (guard_dog.has_value()) {
-      // 创建工作线程自己的WatchDog
+      // 创建工作线程自己的 WatchDog
       watch_dog_ = guard_dog->createWatchDog(api_.threadFactory().currentThreadId(),
                                              dispatcher_->name(), *dispatcher_);
     }
   });
-  // 执行线程Dispatcher中的run方法来阻塞等待处理新事件
+  // 执行线程 Dispatcher 中的 run 方法来阻塞等待处理新事件
   dispatcher_->run(Event::Dispatcher::RunType::Block);
   ENVOY_LOG(debug, "worker exited dispatch loop");
   if (guard_dog.has_value()) {
