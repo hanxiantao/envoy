@@ -89,6 +89,7 @@ public:
                               FilterFactoriesList& filter_factories) {
 
     DependencyManager dependency_manager;
+    // 轮询所有 L7 过滤器，并通过 processFilter 创建支持的过滤器工厂实例
     for (int i = 0; i < filters.size(); i++) {
       absl::Status status =
           processFilter(filters[i], i, prefix, filter_chain_type, i == filters.size() - 1,
@@ -131,6 +132,7 @@ private:
     }
 
     // Now see if there is a factory that will accept the config.
+    // 根据配置获取 L7 过滤器工厂
     auto* factory = Config::Utility::getAndCheckFactory<NeutralNamedHttpFilterFactory>(
         proto_config, proto_config.is_optional());
     // null pointer returned only when the filter is optional, then skip all the processes.
@@ -141,6 +143,7 @@ private:
     }
     ProtobufTypes::MessagePtr message = Config::Utility::translateToFactoryConfig(
         proto_config, server_context_.messageValidationVisitor(), *factory);
+    // 调用 L7 过滤器工厂的 createFilterFactoryFromProto 方法
     absl::StatusOr<Http::FilterFactoryCb> callback_or_error =
         factory->createFilterFactoryFromProto(*message, stats_prefix_, factory_context_);
     if (!callback_or_error.status().ok()) {

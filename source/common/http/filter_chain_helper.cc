@@ -24,10 +24,10 @@ void FilterChainUtility::createFilterChainForFactories(
             .value_or(filter_config_provider.disabled)) {
       continue;
     }
-    // 获取L7过滤器配置
+    // 获取 L7 过滤器配置
     auto config = filter_config_provider.provider->config();
     if (config.has_value()) {
-      // 创建L7过滤器
+      // 创建 L7 过滤器
       Filter::NamedHttpFilterFactoryCb& factory_cb = config.value().get();
       manager.applyFilterFactoryCb({filter_config_provider.provider->name(), factory_cb.name},
                                    factory_cb.factory_cb);

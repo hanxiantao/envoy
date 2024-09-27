@@ -394,8 +394,7 @@ RequestDecoder& ConnectionManagerImpl::newStream(ResponseEncoder& response_encod
     downstream_stream_account = buffer_factory.createAccount(response_encoder.getStream());
     response_encoder.getStream().setAccount(downstream_stream_account);
   }
-  // 创建代表下游请求的ActiveStream对象
-  // ActiveStream构造方法中将设置IdleTimer定时器来处理长时间无响应的请求,当定时器被触发时,将关闭当前的ActiveStream请求
+  // 创建代表下游请求的 ActiveStream 对象
   auto new_stream = std::make_unique<ActiveStream>(
       *this, response_encoder.getStream().bufferLimit(), std::move(downstream_stream_account));
 
@@ -479,14 +478,14 @@ Network::FilterStatus ConnectionManagerImpl::onData(Buffer::Instance& data, bool
       return Network::FilterStatus::StopIteration;
     }
     // Http3 codec should have been instantiated by now.
-    // 根据buffer内容创建L7解码器codec
+    // 根据 buffer 内容创建 L7 解码器 codec
     createCodec(data);
   }
 
   bool redispatch;
   do {
     redispatch = false;
-    // 使用解码器处理buffer数据
+    // 使用解码器处理 buffer 数据
     const Status status = codec_->dispatch(data);
 
     if (isBufferFloodError(status) || isInboundFramesWithEmptyPayloadError(status)) {
@@ -1346,7 +1345,7 @@ void ConnectionManagerImpl::ActiveStream::decodeHeaders(RequestHeaderMapSharedPt
   }
 
   filter_manager_.streamInfo().setRequestHeaders(*request_headers_);
-  // 创建L7过滤器
+  // 创建 L7 过滤器
   const bool upgrade_rejected = filter_manager_.createFilterChain() == false;
 
   if (connection_manager_.config_->flushAccessLogOnNewRequest()) {
@@ -1377,7 +1376,7 @@ void ConnectionManagerImpl::ActiveStream::decodeHeaders(RequestHeaderMapSharedPt
   }
 
   if (!connection_manager_.shouldDeferRequestProxyingToNextIoCycle()) {
-    // 调用L7过滤器管理器的FilterManager::decodeHeaders方法来处理HTTP请求头部的内容
+    // 执行 L7 过滤器处理请求内容
     filter_manager_.decodeHeaders(*request_headers_, end_stream);
   } else {
     state_.deferred_to_next_io_iteration_ = true;

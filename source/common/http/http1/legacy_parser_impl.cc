@@ -81,7 +81,7 @@ public:
   }
 
   size_t execute(const char* slice, int len) {
-    // 调用解码器方法http_parser_execute解析数据分片slice内容
+    // 调用解码器方法 http_parser_execute 解析数据分片 slice 内容
     return http_parser_execute(&parser_, &settings_, slice, len);
   }
 

@@ -664,17 +664,17 @@ Http::Status ConnectionImpl::dispatch(Buffer::Instance& data) {
   if (data.length() > 0) {
     current_dispatching_buffer_ = &data;
     while (data.length() > 0) {
-      // 每次取data的头部分片slice数据
+      // 每次取 data 的头部分片 slice 数据
       auto slice = data.frontSlice();
       dispatching_slice_already_drained_ = false;
-      // 调用dispatchSlice方法循环处理接收到的数据缓冲区中的所有分片slice数据
+      // 调用 dispatchSlice 方法循环处理接收到的数据缓冲区中的所有分片 slice 数据
       auto statusor_parsed = dispatchSlice(static_cast<const char*>(slice.mem_), slice.len_);
       if (!statusor_parsed.ok()) {
         return statusor_parsed.status();
       }
       if (!dispatching_slice_already_drained_) {
         ASSERT(statusor_parsed.value() <= slice.len_);
-        // 清理已处理过的分片slice部分
+        // 清理已处理过的分片 slice 部分
         data.drain(statusor_parsed.value());
       }
 
