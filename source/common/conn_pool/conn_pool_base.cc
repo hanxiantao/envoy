@@ -144,10 +144,12 @@ ConnPoolImplBase::tryCreateNewConnection(float global_preconnect_ratio) {
   if (can_create_connection || (ready_clients_.empty() && busy_clients_.empty() &&
                                 connecting_clients_.empty() && early_data_clients_.empty())) {
     ENVOY_LOG(debug, "creating a new connection (connecting={})", connecting_clients_.size());
-    // instantiateActiveClient是创建新连接的主要方法,在连接创建成功后,将根据连接的当前状态将其放入可用连接ready_clients_、
-    // 已用连接busy_clients_、正在建立连接connecting_clients_的列表中
-    // 如果连接建立很快,其可以马上变成ready_clients_
-    // 如果已经有待处理请求,则会在onUpstreamReady回调方法中关联待处理请求并将其立即变成busy_clients_
+    // instantiateActiveClient 是创建新连接的主要方法，在连接创建成功后，
+    // 将根据连接的当前状态将其放入可用连接 ready_clients_、已用连接 busy_clients_、
+    // 正在建立连接 connecting_clients_ 的列表中
+    // 如果连接建立较慢，首先将连接放入 connecting_clients_ 列表中
+    // 如果连接建立很快，其可以马上变成 ready_clients_
+    // 如果已经有待处理请求，则会在 onUpstreamReady 回调方法中关联待处理请求并将其立即变成 busy_clients_
     ActiveClientPtr client = instantiateActiveClient();
     if (client.get() == nullptr) {
       ENVOY_LOG(trace, "connection creation failed");
@@ -273,7 +275,6 @@ ConnectionPool::Cancellable* ConnPoolImplBase::newStreamImpl(AttachContext& cont
     attachStreamToClient(client, context);
     // Even if there's a ready client, we may want to preconnect to handle the next incoming stream.
     tryCreateNewConnections();
-    // 无法将新请求放入等待队列
     return nullptr;
   }
 
@@ -292,9 +293,10 @@ ConnectionPool::Cancellable* ConnPoolImplBase::newStreamImpl(AttachContext& cont
     onPoolFailure(nullptr, absl::string_view(), ConnectionPool::PoolFailureReason::Overflow,
                   context);
     host_->cluster().trafficStats()->upstream_rq_pending_overflow_.inc();
+    // 无法将新请求放入等待队列
     return nullptr;
   }
-
+  // 创建一个新的待处理流，并将其添加到 pending_streams_ 中
   ConnectionPool::Cancellable* pending = newPendingStream(context, can_send_early_data);
   ENVOY_LOG(debug, "trying to create new connection");
   ENVOY_LOG(trace, fmt::format("{}", *this));
@@ -302,7 +304,7 @@ ConnectionPool::Cancellable* ConnPoolImplBase::newStreamImpl(AttachContext& cont
   auto old_capacity = connecting_stream_capacity_;
   // This must come after newPendingStream() because this function uses the
   // length of pending_streams_ to determine if a new connection is needed.
-  // 放入等待队列
+  // 调用 tryCreateNewConnections 方法检查 pending_streams_ 的长度，以此来判断是否需要创建新的连接
   const ConnectionResult result = tryCreateNewConnections();
   // If there is not enough connecting capacity, the only reason to not
   // increase capacity is if the connection limits are exceeded.

@@ -451,7 +451,7 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
   std::function<void(Http::ResponseHeaderMap&)> modify_headers = [](Http::ResponseHeaderMap&) {};
 
   // Determine if there is a route entry or a direct response for the request.
-  // 根据请求计算路由目标Cluster
+  // 匹配路由项
   route_ = callbacks_->route();
   if (!route_) {
     stats_.no_route_.inc();
@@ -465,9 +465,12 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
 
   // Determine if there is a direct response for the request.
   const auto* direct_response = route_->directResponseEntry();
+  // 如果 Cluster 配置了 HTTP 本地响应 directResponse
   if (direct_response != nullptr) {
     stats_.rq_direct_response_.inc();
+    // 根据配置决定是否重写请求头中的 Path
     direct_response->rewritePathHeader(headers, !config_->suppress_envoy_headers_);
+    // 调用 sendLocalReply 方法返回本地响应
     callbacks_->sendLocalReply(
         direct_response->responseCode(), direct_response->responseBody(),
         [this, direct_response,
@@ -486,6 +489,7 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
           direct_response->finalizeResponseHeaders(response_headers, callbacks_->streamInfo());
         },
         absl::nullopt, StreamInfo::ResponseCodeDetails::get().DirectResponse);
+    // 不再继续执行其他 L7 过滤器
     return Http::FilterHeadersStatus::StopIteration;
   }
 
@@ -503,7 +507,7 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
                       route_entry_->clusterName());
     };
   }
-  // 获取目标服务线程安全Cluster
+  // 根据路由项匹配 Cluster
   Upstream::ThreadLocalCluster* cluster =
       config_->cm_.getThreadLocalCluster(route_entry_->clusterName());
   if (!cluster) {
@@ -642,7 +646,7 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
   if (upstream_options_ && callbacks_->getUpstreamSocketOptions()) {
     Network::Socket::appendOptions(upstream_options_, callbacks_->getUpstreamSocketOptions());
   }
-  // 根据目标Cluster计算负载均衡目标主机Host,根据目标主机Host获取连接池
+  // 获取 Cluster 的上游连接池
   std::unique_ptr<GenericConnPool> generic_conn_pool = createConnPool(*cluster);
 
   if (!generic_conn_pool) {
@@ -732,7 +736,7 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
 
   // Ensure an http transport scheme is selected before continuing with decoding.
   ASSERT(headers.Scheme());
-  // 创建用于请求重试的对象retry_state_
+  // 创建用于请求重试的对象 retry_state_
   retry_state_ = createRetryState(
       route_entry_->retryPolicy(), headers, *cluster_, request_vcluster_, route_stats_context_,
       config_->factory_context_, callbacks_->dispatcher(), route_entry_->priority());
@@ -766,12 +770,12 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
   // will never transition from false to true.
   bool can_use_http3 =
       !transport_socket_options_ || !transport_socket_options_->http11ProxyInfo().has_value();
-  // 创建上游对象upstream_request
+  // 创建上游 HTTP 请求
   UpstreamRequestPtr upstream_request =
       std::make_unique<UpstreamRequest>(*this, std::move(generic_conn_pool), can_send_early_data,
                                         can_use_http3, false /*enable_half_close*/);
   LinkedList::moveIntoList(std::move(upstream_request), upstream_requests_);
-  // 处理上游请求
+  // 处理上游 HTTP 请求
   upstream_requests_.front()->acceptHeadersFromRouter(end_stream);
   if (streaming_shadows_) {
     // start the shadow streams.
@@ -819,7 +823,7 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
   if (end_stream) {
     onRequestComplete();
   }
-  // 不再继续执行其他L7过滤器
+  // 不再继续执行其他 L7 过滤器
   return Http::FilterHeadersStatus::StopIteration;
 }
 

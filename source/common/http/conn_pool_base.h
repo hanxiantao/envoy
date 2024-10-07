@@ -118,9 +118,11 @@ public:
     }
     // The static cast makes sure we call the base class host() and not
     // HttpConnPoolImplBase::host which is of a different type.
+    // 创建 TCP 网络连接
     Upstream::Host::CreateConnectionData data =
         static_cast<Envoy::ConnectionPool::ConnPoolImplBase*>(&parent)->host()->createConnection(
             parent.dispatcher(), parent.socketOptions(), parent.transportSocketOptions());
+    // 创建解码器对象
     initialize(data, parent);
   }
 

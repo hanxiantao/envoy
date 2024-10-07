@@ -32,6 +32,7 @@ Http::FilterFactoryCb RateLimitFilterConfig::createFilterFactoryFromProtoTyped(
   THROW_IF_NOT_OK(Config::Utility::checkTransportVersion(proto_config.rate_limit_service()));
   Grpc::GrpcServiceConfigWithHashKey config_with_hash_key =
       Grpc::GrpcServiceConfigWithHashKey(proto_config.rate_limit_service().grpc_service());
+  // 返回过滤器创建方法
   return [config_with_hash_key, &context, timeout,
           filter_config](Http::FilterChainFactoryCallbacks& callbacks) -> void {
     callbacks.addStreamFilter(std::make_shared<Filter>(

@@ -73,6 +73,7 @@ void ActiveClient::StreamWrapper::onResetStream(StreamResetReason, absl::string_
 
 ActiveClient::ActiveClient(HttpConnPoolImplBase& parent,
                            OptRef<Upstream::Host::CreateConnectionData> data)
+    // HTTP1 连接每次只能处理一个并发请求
     : Envoy::Http::ActiveClient(parent, parent.host()->cluster().maxRequestsPerConnection(),
                                 /* effective_concurrent_stream_limit */ 1,
                                 /* configured_concurrent_stream_limit */ 1, data) {

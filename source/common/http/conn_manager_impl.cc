@@ -1623,7 +1623,7 @@ void ConnectionManagerImpl::ActiveStream::refreshCachedRoute(const Router::Route
       snapScopedRouteConfig();
     }
     if (snapped_route_config_ != nullptr) {
-      // 根据HTTP请求头进行后续路由处理
+      // 根据 HTTP 请求头进行后续路由处理
       route = snapped_route_config_->route(cb, *request_headers_, filter_manager_.streamInfo(),
                                            stream_id_);
     }

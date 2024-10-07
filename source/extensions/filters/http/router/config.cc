@@ -21,6 +21,7 @@ Http::FilterFactoryCb RouterFilterConfig::createFilterFactoryFromProtoTyped(
       proto_config));
 
   return [filter_config](Http::FilterChainFactoryCallbacks& callbacks) -> void {
+    // L7 路由过滤器
     callbacks.addStreamDecoderFilter(
         std::make_shared<Router::ProdFilter>(filter_config, filter_config->default_stats_));
   };

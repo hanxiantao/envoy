@@ -165,6 +165,7 @@ RetryStateImpl::~RetryStateImpl() { resetRetry(); }
 
 void RetryStateImpl::enableBackoffTimer() {
   if (!retry_timer_) {
+    // 在定时器时间到达后调用 onRetry 回调方法
     retry_timer_ = dispatcher_.createTimer([this]() -> void { backoff_callback_(); });
   }
 
@@ -352,7 +353,7 @@ RetryStatus RetryStateImpl::shouldRetryHeaders(const Http::ResponseHeaderMap& re
           backoff_interval.value().count(), random_);
     }
   }
-
+  // 进行重试
   return shouldRetry(retry_decision,
                      [disable_early_data, callback]() { callback(disable_early_data); });
 }
@@ -391,7 +392,7 @@ RetryStateImpl::wouldRetryFromHeaders(const Http::ResponseHeaderMap& response_he
   }
 
   uint64_t response_status = Http::Utility::getResponseStatus(response_headers);
-
+  // 根据响应头部状态码判断是否匹配设置的重试条件，retry_on_ 变量是 Envoy 的重试策略配置
   if (retry_on_ & RetryPolicy::RETRY_ON_5XX) {
     if (Http::CodeUtility::is5xx(response_status)) {
       return RetryDecision::RetryWithBackoff;

@@ -1973,7 +1973,7 @@ Http::ConnectionPool::Instance*
 ClusterManagerImpl::ThreadLocalClusterManagerImpl::ClusterEntry::httpConnPoolImpl(
     ResourcePriority priority, absl::optional<Http::Protocol> downstream_protocol,
     LoadBalancerContext* context, bool peek) {
-  // 调用负载均衡器的chooseHost方法,在当前Cluster的实例中挑选一个最合适的目标主机
+  // 调用负载均衡器的 chooseHost 方法，在当前 Cluster 的实例中挑选一个最合适的目标主机
   HostConstSharedPtr host = (peek ? peekAnotherHost(context) : chooseHost(context));
   if (!host) {
     if (!peek) {
@@ -2023,14 +2023,15 @@ ClusterManagerImpl::ThreadLocalClusterManagerImpl::ClusterEntry::httpConnPoolImp
       context->downstreamConnection()) {
     context->downstreamConnection()->hashKey(hash_key);
   }
-
+  // 创建目标主机的连接池容器
   ConnPoolsContainer& container = *parent_.getHttpConnPoolsContainer(host, true);
 
   // Note: to simplify this, we assume that the factory is only called in the scope of this
   // function. Otherwise, we'd need to capture a few of these variables by value.
+  // 根据目标主机 Host 支持的协议类型计算散列值 hash_key，并在目标主机已创建的活跃连接池中通过 getPool 进行连接池查找
   ConnPoolsContainer::ConnPools::PoolOptRef pool =
       container.pools_->getPool(priority, hash_key, [&]() {
-        // 创建目标主机Host连接池
+        // 如果连接池不存在，调用 allocateConnPool 方法创建新连接池
         auto pool = parent_.parent_.factory_.allocateConnPool(
             parent_.thread_local_dispatcher_, host, priority, upstream_protocols,
             alternate_protocol_options, !upstream_options->empty() ? upstream_options : nullptr,

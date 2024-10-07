@@ -78,7 +78,7 @@ HttpConnPoolImplBase::newPendingStream(Envoy::ConnectionPool::AttachContext& con
             ready_clients_.size(), busy_clients_.size(), connecting_clients_.size());
   Envoy::ConnectionPool::PendingStreamPtr pending_stream(
       new HttpPendingStream(*this, decoder, callbacks, can_send_early_data));
-  // 将请求放入连接池待处理请求队列pending_stream中
+  // 将请求放入连接池待处理请求队列 pending_streams_ 中
   return addPendingStream(std::move(pending_stream));
 }
 
